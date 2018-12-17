@@ -1,7 +1,10 @@
 #include <math.h> 
 #include <stdio.h>
-#include "foo.h"
+#include <string.h>
 
+// #include "foo.h"
+#define AVAILABLE_COMMANDS_COUNT 9
+#define MAX_COMMAND_LEN 14
 
 typedef struct Complex {
     float realVal;
@@ -17,10 +20,32 @@ typedef struct Variables {
     Complex F;
 } Variables;
 
+char *COMMANDS[] = {
+    "read_comp",
+    "print_comp",
+    "add_comp",
+    "sub_comp",
+    "mult_comp_real",
+    "mult_comp_imp",
+    "mult_comp_comp",
+    "abs_comp",
+    "stop"
+};
+
 Variables init_variables();
 void read_comp(Complex *c1, float realVal, float imaginaryVal);
 void print_comp(Complex *comp);
 void init_complex(Complex * c);
+int is_valid_command(char *command);
+
+int is_valid_command(char *command) {
+    for (int i=0; i<AVAILABLE_COMMANDS_COUNT; i++) {
+        if (strcmp(COMMANDS[i], command) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
 
 Variables init_variables() {
     Variables v1;
@@ -130,6 +155,97 @@ void abs_comp(Complex *c1) {
     printf("%0.2f", absVal);
 }
 
+int main() {
+    char rawCommand[100000];
+    char *p_command, *command;
+    
+    while (1) {
+        // TODO - Do I need this??
+        memset(rawCommand, 0, sizeof(rawCommand));
+        p_command = NULL;
+        command = NULL;
+
+        printf("-> ");
+        p_command = fgets(rawCommand, 100000, stdin);
+        // fgets(rawCommand, 100000, stdin);
+        
+        // TODO - THIS WON'T WORK WITH rawCommand == NULL, and I need the additional pointer. WHY?!
+        // if (p_command == NULL) {
+        if (p_command == NULL) { 
+            printf("Improper exit... leaving\n");
+            return 0;
+        } else if (rawCommand == "STOP") {
+            printf("Stopping!\n");
+            break;
+        } else {
+            printf("\nReceived %s\n", rawCommand);
+            command = strtok(rawCommand, " "); // Get the first token, which is expected to be the command
+            if (!is_valid_command(command)) {
+                printf("Undefined command name\n");
+                continue;
+            }
+
+            printf("Received the command %s\n", command);
+
+            p_command = strtok(NULL, ",");
+            printf("Next token is - '%s'\n", p_command);
+        }
+    }
+
+
+}
+
+int main2() {
+    char rawCommand[100000];
+    // char command[MAX_COMMAND_LEN];
+    // char tokens[];
+    char *token, *command;
+    printf("Hey!\n");
+
+    int c;
+    int z = 0;
+    while (1) {
+        c = getchar();
+
+        if (c == EOF) {
+            printf("Leaving...\n");
+            return 0;
+        }
+
+        if (c == '\n') {
+            command = strtok(rawCommand, " "); // Get the first token, which is expected to be the command
+            printf("Please enter a valid command\n");
+            break;
+        }
+        rawCommand[z] = c;
+        z++;
+    }
+
+    if (!is_valid_command(command)) {
+        printf("Undefined command name\n");
+    }
+    // printf("command=%s\n", command);
+    // command = strtok(NULL, " ");
+    // printf("command=%s\n", command);
+    // while (token != NULL) {
+    //     printf("token=%s\n", token);
+
+    //     int r = is_valid_command(token);
+    //     if (r == 0 ) {
+    //         
+    //         break;
+    //     }
+    //     token = strtok(NULL, " ");
+        
+    //     printf("token = %s, command=%s\n", token, rawCommand);
+    //     // printf("Token %s validity result - %d\n", command, r);
+
+    // }
+
+    printf("DONE\n");
+    return 0;
+}
+
 // int main() {
 //     printf("Hello\n");
 
@@ -177,3 +293,4 @@ void abs_comp(Complex *c1) {
     
 //     return 0;
 // }
+
