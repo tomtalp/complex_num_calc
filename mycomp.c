@@ -1,8 +1,9 @@
-#include <math.h> 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <math.h>
 
-// #include "foo.h"
 #define AVAILABLE_COMMANDS_COUNT 9
 #define MAX_COMMAND_LEN 14
 
@@ -36,38 +37,61 @@ Variables init_variables();
 void read_comp(Complex *c1, float realVal, float imaginaryVal);
 void print_comp(Complex *comp);
 void init_complex(Complex * c);
-int is_valid_command(char *command);
+int is_valid_command_name(char *command_name);
 
-int is_valid_command(char *command) {
-    for (int i=0; i<AVAILABLE_COMMANDS_COUNT; i++) {
-        if (strcmp(COMMANDS[i], command) == 0) {
-            return 1;
+/* 
+    Validate a command name by checking if it has a trailing comma, or if it's
+    in the list of known commands.
+*/
+int is_valid_command_name(char *command_name) {
+    int i;
+    int is_known_command = 0;
+
+    if (command_name[strlen(command_name)-1] == ',') {
+        printf("Illegal comma\n");
+        return 0;
+    }
+
+    for (i=0; i<AVAILABLE_COMMANDS_COUNT; i++) {
+        if (strcmp(COMMANDS[i], command_name) == 0) {
+            is_known_command = 1;
+            break;
         }
     }
-    return 0;
+
+    if (is_known_command == 0) {
+        printf("Undefined command name\n");
+        return 0;
+    }
+    
+    return 1;
+}
+
+int is_valid_var(char *command) {
+    return strlen(command) == 1;
 }
 
 Variables init_variables() {
     Variables v1;
     Complex c1, c2, c3, c4, c5, c6;
 
+    init_complex(&c1);
     v1.A = c1;
-    init_complex(&v1.A);
-
+    
+    init_complex(&c2);
     v1.B = c2;
-    init_complex(&v1.B);
 
+    init_complex(&c3);
     v1.C = c3;
-    init_complex(&v1.C);
 
+    init_complex(&c4);
     v1.D = c4;
-    init_complex(&v1.D);
 
+    init_complex(&c5);
     v1.E = c5;
-    init_complex(&v1.E);
 
+    init_complex(&c6);
     v1.F = c6;
-    init_complex(&v1.F);
 
     return v1;
 }
@@ -77,14 +101,19 @@ void init_complex(Complex * c) {
     c->imaginaryVal = 0;
 }
 
-Complex * access_variable(Variables * v, char varName) {
-    switch(varName) {
-        case 'A': return &v->A;
-        case 'B': return &v->B;
-        case 'C': return &v->C;
-        case 'D': return &v->D;
-        case 'E': return &v->E;
-        case 'F': return &v->F;
+Complex * access_variable(Variables * v, char *varName) {
+    if (strcmp(varName, "A") == 0) {
+        return &v->A;
+    } else if (strcmp(varName, "B") == 0) {
+        return &v->B;
+    } else if (strcmp(varName, "C") == 0) {
+        return &v->C;
+    } else if (strcmp(varName, "D") == 0) {
+        return &v->D;
+    } else if (strcmp(varName, "E") == 0) {
+        return &v->E;
+    } else if (strcmp(varName, "F") == 0) {
+        return &v->F;
     }
     return NULL;
 }
@@ -103,7 +132,7 @@ void print_comp(Complex *c) {
     }
     printf("\n");
 }
-
+/*
 void add_comp(Complex *c1, Complex *c2) {
     Complex result;
     float realVal = c1->realVal + c2->realVal;
@@ -154,143 +183,135 @@ void abs_comp(Complex *c1) {
     float absVal = sqrt(pow(c1->realVal, 2) + pow(c1->imaginaryVal, 2));
     printf("%0.2f", absVal);
 }
+*/
+void RemoveSpaces(char* source)
+{
+  char* i = source;
+  char* j = source;
+  while(*j != 0)
+  {
+    /**i = *(j++);*/
+    *i = *j;
+    /* i = j */
+    j++;
+    if(!isspace(*i))
+      i++;
+  }
+  *i = 0;
+}
+
+void trim_leading_whitespace(char *source) {
+    char * start = source;
+    
+    while (isspace(*start)) {
+        start++;
+    }
+
+    while (*start != 0) {
+        *source = *start;
+        source++;
+        start++;
+    }   
+    *source = '\0'; /* Terminate the string */
+}
+
+void get_command_name(char *source, char *command_name) {
+    char *sourceStart = source;
+
+    /* Locate the command name */
+    while (*sourceStart != 0 && !isspace(*sourceStart)) {
+        *command_name = *sourceStart;
+        command_name++;
+        sourceStart++;        
+    }
+    *command_name = '\0'; /* TODO - Do I need this? */
+
+    /* Remove the command name from source */
+    while (*sourceStart != 0) {
+        *source = *sourceStart;
+        source++;
+        sourceStart++; 
+    }
+    *source = '\0';
+}
+
+/* void string_parser(char *source, char **tokens) { */
+int string_parser(char *source) {    
+    char command_name[100] = "";
+
+    printf("Original command - '%s'\n", source);
+    trim_leading_whitespace(source);
+
+    get_command_name(source, command_name);
+    printf("Command name = '%s', command_size = %ld, remaining command = '%s'\n", command_name, strlen(command_name),source);
+    trim_leading_whitespace(source);
+    printf("Remaining command after second trim= '%s'\n", source);
+
+    if (!is_valid_command_name(command_name)) {
+        return 0;
+    }
+
+    if (strcmp(command_name, "stop") == 0) {
+        if (strlen(source) != 0) {
+            printf("Extraneous text after end of command\n");
+            return 0;
+        }
+        return -1;
+    }
+
+    char *token;
+    char *tokensArray[10];
+    int tokenNum = 0;
+
+    token = strtok(source, ",");
+
+    while (token != NULL) {
+        printf( "raw token = '%s'\n", token );
+        tokensArray[tokenNum++] = token;
+
+        token = strtok(NULL, ",");
+    }
+    printf("Done tokenizing\n");
+    for(int i=0; i < tokenNum; i++) {
+        printf("Token #%d = %s\n", i+1, tokensArray[i]);
+    }
+
+    return 0;
+
+}
+
+
 
 int main() {
-    char rawCommand[100000];
-    char *p_command, *command;
-    
-    while (1) {
-        // TODO - Do I need this??
-        memset(rawCommand, 0, sizeof(rawCommand));
-        p_command = NULL;
-        command = NULL;
+    char rawCommand[1000];
+    // char rawCommand[1000] = "read_comp A, B, 2";
+    char *p_command;
+    int exit_status_code = 0;
 
-        printf("-> ");
+    Variables vars;
+    vars = init_variables();
+
+    while (1) {
+        /* TODO - Do I need this?? */
+        // memset(rawCommand, 0, sizeof(rawCommand));
+        printf(">>> ");
+
         p_command = fgets(rawCommand, 100000, stdin);
-        // fgets(rawCommand, 100000, stdin);
-        
-        // TODO - THIS WON'T WORK WITH rawCommand == NULL, and I need the additional pointer. WHY?!
-        // if (p_command == NULL) {
+        /* TODO - THIS WON'T WORK WITH rawCommand == NULL, and I need the additional pointer. WHY?! */
         if (p_command == NULL) { 
             printf("Improper exit... leaving\n");
             return 0;
-        } else if (rawCommand == "STOP") {
-            printf("Stopping!\n");
-            break;
-        } else {
-            printf("\nReceived %s\n", rawCommand);
-            command = strtok(rawCommand, " "); // Get the first token, which is expected to be the command
-            if (!is_valid_command(command)) {
-                printf("Undefined command name\n");
-                continue;
-            }
-
-            printf("Received the command %s\n", command);
-
-            p_command = strtok(NULL, ",");
-            printf("Next token is - '%s'\n", p_command);
         }
-    }
 
+        strtok(rawCommand, "\n"); // Remove \n from our command
+        printf("\nReceived '%s'\n", rawCommand);
+        exit_status_code = string_parser(rawCommand);
 
-}
-
-int main2() {
-    char rawCommand[100000];
-    // char command[MAX_COMMAND_LEN];
-    // char tokens[];
-    char *token, *command;
-    printf("Hey!\n");
-
-    int c;
-    int z = 0;
-    while (1) {
-        c = getchar();
-
-        if (c == EOF) {
-            printf("Leaving...\n");
+        if (exit_status_code == -1) {
             return 0;
         }
 
-        if (c == '\n') {
-            command = strtok(rawCommand, " "); // Get the first token, which is expected to be the command
-            printf("Please enter a valid command\n");
-            break;
-        }
-        rawCommand[z] = c;
-        z++;
     }
-
-    if (!is_valid_command(command)) {
-        printf("Undefined command name\n");
-    }
-    // printf("command=%s\n", command);
-    // command = strtok(NULL, " ");
-    // printf("command=%s\n", command);
-    // while (token != NULL) {
-    //     printf("token=%s\n", token);
-
-    //     int r = is_valid_command(token);
-    //     if (r == 0 ) {
-    //         
-    //         break;
-    //     }
-    //     token = strtok(NULL, " ");
-        
-    //     printf("token = %s, command=%s\n", token, rawCommand);
-    //     // printf("Token %s validity result - %d\n", command, r);
-
-    // }
-
-    printf("DONE\n");
     return 0;
 }
-
-// int main() {
-//     printf("Hello\n");
-
-//     Variables v1;
-
-//     v1 = init_variables();
-
-//     // Set A - 
-//     Complex * A = access_variable(&v1, 'A');
-//     read_comp(A, 3.1, 5.3);
-
-//     // Set B - 
-//     Complex * B = access_variable(&v1, 'B');
-//     read_comp(B, 18.2, 20);
-
-//     printf("A = ");
-//     print_comp(A);
-//     printf("B = ");
-//     print_comp(B);
-//     printf("\n\n");
-
-//     printf("A+B = ");
-//     add_comp(A, B);
-//     printf("\n");
-
-//     printf("A-B = ");
-//     sub_comp(A, B);
-//     printf("\n");
-
-//     printf("A * 3 = ");
-//     mult_comp_real(A, 3);
-//     printf("\n");
-
-//     printf("A * 5i = ");
-//     mult_comp_img(A, 5);
-//     printf("\n");
-
-//     printf("A * B = ");
-//     mult_comp_comp(A, B);
-//     printf("\n");
-
-//     printf("|A| = ");
-//     abs_comp(A);
-//     printf("\n");
-    
-//     return 0;
-// }
 
