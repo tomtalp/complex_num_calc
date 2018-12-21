@@ -3,14 +3,21 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <math.h>
+#include <complex.h>
 
-#define AVAILABLE_COMMANDS_COUNT 9
-#define MAX_COMMAND_LEN 14
+#define AVAILABLE_COMMANDS_COUNT  9
+#define MAX_COMMAND_LEN          14
+
+#define MULTIPLE_NUMBER_ARGS      1
+#define SINGLE_NUMBER_ARGS        2
+#define SINGLE_COMP_ARGS          3
+#define EMPTY_ARGS                4
 
 typedef struct Complex {
     float realVal;
     float imaginaryVal;
 } Complex;
+
 
 typedef struct Variables {
     Complex A;
@@ -32,9 +39,6 @@ void abs_comp(Complex *c1);
 void init_complex(Complex * c);
 int is_valid_command_name(char *command_name);
 
-char *READ_COMP_LEGAL_ARGS[3] = {"VAR", "NUM", "NUM"};
-char *PRINT_COMP_LEGAL_ARGS[1] = {"VAR"};
-
 // struct {
 //     char *command_name;
 //     void (*command_func)();
@@ -44,17 +48,35 @@ char *PRINT_COMP_LEGAL_ARGS[1] = {"VAR"};
 //     {"print_comp", print_comp, PRINT_COMP_LEGAL_ARGS},
 // };
 
-char *COMMANDS[] = {
-    "read_comp",
-    "print_comp",
-    "add_comp",
-    "sub_comp",
-    "mult_comp_real",
-    "mult_comp_imp",
-    "mult_comp_comp",
-    "abs_comp",
-    "stop"
+
+struct {
+    char *command_name;
+    int command_legal_args;
+} COMMANDS[] = {
+    {"read_comp", MULTIPLE_NUMBER_ARGS},
+    {"print_comp", EMPTY_ARGS},
+    {"add_comp", SINGLE_COMP_ARGS},
+    {"sub_comp", SINGLE_COMP_ARGS},
+    {"mult_comp_real", SINGLE_NUMBER_ARGS},
+    {"mult_comp_img", SINGLE_NUMBER_ARGS},
+    {"mult_comp_img", SINGLE_COMP_ARGS},
+    {"abs_comp", EMPTY_ARGS},
+    {"stop", EMPTY_ARGS}
 };
+
+
+
+// char *COMMANDS[] = {
+//     "read_comp",
+//     "print_comp",
+//     "add_comp",
+//     "sub_comp",
+//     "mult_comp_real",
+//     "mult_comp_imp",
+//     "mult_comp_comp",
+//     "abs_comp",
+//     "stop"
+// };
 
 /* 
     Validate a command name by checking if it has a trailing comma, or if it's
@@ -70,7 +92,7 @@ int is_valid_command_name(char *command_name) {
     }
 
     for (i=0; i<AVAILABLE_COMMANDS_COUNT; i++) {
-        if (strcmp(COMMANDS[i], command_name) == 0) {
+        if (strcmp(COMMANDS[i].command_name, command_name) == 0) {
             is_known_command = 1;
             break;
         }
@@ -250,16 +272,6 @@ void get_command_name(char *source, char *command_name) {
     *source = '\0';
 }
 
-// int validate_command_args(char *command_name, char **args_array) {
-//     printf("Validating the command %s\n", command_name);
-//     Complex result;
-//     float realVal = 100;
-//     float imaginaryVal = 150;
-//     read_comp(&result, realVal, imaginaryVal);
-//     print_comp(&result);
-//     COMMANDS[1].command_func(&result);
-// }
-
 /*
     Prepare the raw command for parsing - remove leading whitespace & trailing '\n'
 */
@@ -285,57 +297,102 @@ int get_command_args(char *raw_command, char **args_array) {
     return detected_args;
 }
 
-void exec_command(char *command_name, char **args, Variables *vars) {
+int is_valid_num(char *num_as_str) {
+    char *err_ptr;
+    strtof(num_as_str, &err_ptr);
+    if (*err_ptr != '\0') {
+        return -1;
+    }
+    return 1;
+}
+
+int get_command_legal_args(char *command_name) {
+     int i;
+     for (i=0; i<AVAILABLE_COMMANDS_COUNT; i++) {
+        if (strcmp(COMMANDS[i].command_name, command_name) == 0) {
+            return COMMANDS[i].command_legal_args;
+        }
+    }
+    return -1;
+}
+
+int validate_command_args(char *command_name, char **args, int arg_size) {
+    int legal_args = get_command_legal_args(command_name);
+    // printf("Validating commaind '%s' , with %d args\n", command_name, arg_size);
+    switch (legal_args) {
+        case MULTIPLE_NUMBER_ARGS:
+            if (arg_size < 3) {
+                printf("Missing parameter\n");
+                return -1;
+            }
+            if (arg_size > 3) {
+                printf("Extraneous text after end of command\n");
+                return -1;
+            }
+
+            if ((is_valid_num(args[1]) == -1) || (is_valid_num(args[2]) == -1)) {
+                printf("Invalid parameter - not a number\n");
+                return -1;
+            }
+
+            return 0;
+    }
+    return 0;
+}
+
+void exec_command(char *command_name, char **args, int arg_size, Variables *vars) {
+    if (arg_size == 0) {
+        printf("Missing parameter\n");
+        return;
+    }
+    char *main_var_name = args[0];
+    Complex *main_comp = access_variable(vars, main_var_name);
+
+    if (main_comp == NULL) {
+        printf("Undefined complex variable\n");
+        return;
+    }
+
     if (strcmp(command_name, "read_comp") == 0) {
-        char *varName = args[0];
         float f1 = atof(args[1]);
         float f2 = atof(args[2]);
-        Complex *c1 = access_variable(vars, varName);
-        read_comp(c1, f1, f2);
+
+        read_comp(main_comp, f1, f2);
+        
     } else if (strcmp(command_name, "print_comp") == 0) {
-        char *varName = args[0];
-        Complex *c1 = access_variable(vars, varName);
-        print_comp(c1);
+        print_comp(main_comp);
     } else if (strcmp(command_name, "add_comp") == 0) {
-        char *varName1 = args[0];
         char *varName2 = args[0];
-        Complex *c1 = access_variable(vars, varName1);
         Complex *c2 = access_variable(vars, varName2);
-        add_comp(c1, c2);
+        add_comp(main_comp, c2);
     } else if (strcmp(command_name, "sub_comp") == 0) {
-        char *varName1 = args[0];
         char *varName2 = args[0];
-        Complex *c1 = access_variable(vars, varName1);
         Complex *c2 = access_variable(vars, varName2);
-        sub_comp(c1, c2);
+        sub_comp(main_comp, c2);
     } else if (strcmp(command_name, "mult_comp_real") == 0) {
-        char *varName1 = args[0];
         float f1 = atof(args[1]);
-        Complex *c1 = access_variable(vars, varName1);
-        mult_comp_real(c1, f1);        
+        mult_comp_real(main_comp, f1);        
     } else if (strcmp(command_name, "mult_comp_img") == 0) {
-        char *varName1 = args[0];
         float f1 = atof(args[1]);
-        Complex *c1 = access_variable(vars, varName1);
-        mult_comp_img(c1, f1);        
+        mult_comp_img(main_comp, f1);        
     } else if (strcmp(command_name, "mult_comp_comp") == 0) {
-        char *varName1 = args[0];
         char *varName2 = args[0];
-        Complex *c1 = access_variable(vars, varName1);
         Complex *c2 = access_variable(vars, varName2);
-        mult_comp_comp(c1, c2);
+        mult_comp_comp(main_comp, c2);
     } else if (strcmp(command_name, "abs_comp") == 0) {
-        char *varName = args[0];
-        Complex *c1 = access_variable(vars, varName);
-        abs_comp(c1);
+        abs_comp(main_comp);
+    } else {
+        printf("Undefined command name\n"); // TODO Do I need this? Never supposed to reach this anyway
     }
 }
 
 
 int main() {
     // char raw_command[1000] = "  read_comp A, B,   2      s   ";
-    char raw_command[1000];
-    char command_name[100] = "";
+    // char raw_command[1000] = "print_comp";
+    char raw_command[80], raw_command_bkup[80];
+    // char raw_command_bkup[80], raw_command[80] = "read_comp A, B, 2, ";
+    char command_name[14] = "";
     char *command_args[10];
     int arg_size;
     
@@ -358,7 +415,7 @@ int main() {
         }
 
         prep_raw_command_for_parsing(raw_command);
-
+        strcpy(raw_command_bkup, raw_command);
         // printf("raw_command after prep_for_parsing = '%s'\n", raw_command);
 
         get_command_name(raw_command, command_name);
@@ -366,6 +423,11 @@ int main() {
         // Remove any leftover whitespaces between command name & args
         trim_leading_whitespace(raw_command);
         // printf("Command name = '%s', command_size = %ld, remaining command = '%s'\n", command_name, strlen(command_name),raw_command);
+        
+        // if (raw_command[strlen(raw_command)-1] == ',') {
+        //     printf("Extraneous text after end of command\n");
+        //     continue;
+        // }
 
         if (!is_valid_command_name(command_name)) {
             continue;
@@ -385,7 +447,18 @@ int main() {
         //     printf("Arg #%d = '%s'\n", i, command_args[i]);
         // }
 
-        exec_command(command_name, command_args, &vars);
+        // printf("What's left from raw_command - '%s'\n", raw_command);
+
+        if (validate_command_args(command_name, command_args, arg_size) == -1) {
+            continue;
+        }
+
+        if (raw_command_bkup[strlen(raw_command_bkup)-1] == ',') {
+            printf("Extraneous text after end of command\n");
+            continue;
+        }
+
+        exec_command(command_name, command_args, arg_size, &vars);
 
     }
     return 0;
