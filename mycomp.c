@@ -215,6 +215,19 @@ void trim_leading_whitespace(char *source) {
     *source = '\0'; /* Terminate the string */
 }
 
+void remove_whitespace(char *str) {
+    char *i = str;
+
+    while (*i != 0) {
+        *str = *i;
+        i++;
+        if (!isspace(*str)) {
+            str++;
+        }
+    }
+    *str = '\0';
+}
+
 void get_command_name(char *source, char *command_name) {
     char *sourceStart = source;
 
@@ -238,14 +251,17 @@ void get_command_name(char *source, char *command_name) {
 /* void string_parser(char *source, char **tokens) { */
 int string_parser(char *source) {    
     char command_name[100] = "";
+    char *command_arg_token;
+    char *arg_tokens_array[10];
+    int token_num = 0;
 
     printf("Original command - '%s'\n", source);
     trim_leading_whitespace(source);
 
     get_command_name(source, command_name);
-    printf("Command name = '%s', command_size = %ld, remaining command = '%s'\n", command_name, strlen(command_name),source);
+    // printf("Command name = '%s', command_size = %ld, remaining command = '%s'\n", command_name, strlen(command_name),source);
     trim_leading_whitespace(source);
-    printf("Remaining command after second trim= '%s'\n", source);
+    // printf("Remaining command after second trim= '%s'\n", source);
 
     if (!is_valid_command_name(command_name)) {
         return 0;
@@ -259,21 +275,17 @@ int string_parser(char *source) {
         return -1;
     }
 
-    char *token;
-    char *tokensArray[10];
-    int tokenNum = 0;
+    command_arg_token = strtok(source, ",");
 
-    token = strtok(source, ",");
+    while (command_arg_token != NULL) {
+        remove_whitespace(command_arg_token);
+        arg_tokens_array[token_num++] = command_arg_token;
 
-    while (token != NULL) {
-        printf( "raw token = '%s'\n", token );
-        tokensArray[tokenNum++] = token;
-
-        token = strtok(NULL, ",");
+        command_arg_token = strtok(NULL, ",");
     }
     printf("Done tokenizing\n");
-    for(int i=0; i < tokenNum; i++) {
-        printf("Token #%d = %s\n", i+1, tokensArray[i]);
+    for(int i=0; i < token_num; i++) {
+        printf("Token #%d = %s\n", i+1, arg_tokens_array[i]);
     }
 
     return 0;
@@ -284,7 +296,8 @@ int string_parser(char *source) {
 
 int main() {
     char rawCommand[1000];
-    // char rawCommand[1000] = "read_comp A, B, 2";
+    // char rawCommand[1000] = "  read_comp A, B,   2      s   ";
+
     char *p_command;
     int exit_status_code = 0;
 
