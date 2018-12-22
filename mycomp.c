@@ -7,7 +7,7 @@
 
 
 #define AVAILABLE_COMMANDS_COUNT  9
-#define MAX_COMMAND_LEN          14
+#define MAX_COMMAND_LEN          15
 #define AVAILABLE_VARS_COUNT      6
 
 #define MULTIPLE_NUMBER_ARGS      1
@@ -50,7 +50,7 @@ struct {
     {"sub_comp", SINGLE_COMP_ARGS},
     {"mult_comp_real", SINGLE_NUMBER_ARGS},
     {"mult_comp_img", SINGLE_NUMBER_ARGS},
-    {"mult_comp_img", SINGLE_COMP_ARGS},
+    {"mult_comp_comp", SINGLE_COMP_ARGS},
     {"abs_comp", EMPTY_ARGS},
     {"stop", EMPTY_ARGS}
 };
@@ -76,6 +76,7 @@ char *VAR_NAMES[] = {
     in the list of known commands.
 */
 int is_valid_command_name(char *command_name) {
+    printf("Evaluating command '%s'\n", command_name);
     int i;
     int is_known_command = 0;
 
@@ -113,7 +114,6 @@ int is_valid_var(char var_name) {
     return -1;
 }
 
-
 void trim_leading_whitespace(char *source) {
     char * start = source;
     
@@ -144,22 +144,28 @@ void remove_whitespace(char *str) {
 
 void get_command_name(char *source, char *command_name) {
     char *sourceStart = source;
+    // printf("Source right in the start - '%s'\n", source);
 
     /* Locate the command name */
     while (*sourceStart != 0 && !isspace(*sourceStart)) {
         *command_name = *sourceStart;
         command_name++;
-        sourceStart++;        
+        sourceStart++;
+        // printf("Source in end of while - '%s'\n", source);        
     }
+    // printf("Source at end of while - '%s'\n", source);        
     *command_name = '\0'; /* TODO - Do I need this? */
-
+    // printf("Source after messing with command_name - '%s'\n", source);
     /* Remove the command name from source */
+    // printf("Source before overwriting - %s, sourceStart - %s, command-14 - '%s'\n", source, sourceStart, command_name-14);
     while (*sourceStart != 0) {
         *source = *sourceStart;
+        // printf("Found character %c in sourceStart, so now source has %c\n", *command_name, *sourceStart);
         source++;
         sourceStart++; 
     }
     *source = '\0';
+    // printf("And in the end source before overwriting - %s, sourceStart - %s, command-14 - '%s'\n", source-14, sourceStart-14, command_name-14);
 }
 
 /*
@@ -204,30 +210,6 @@ int get_command_legal_args(char *command_name) {
         }
     }
     return -1;
-}
-
-int validate_command_args(char *command_name, char **args, int arg_size) {
-    int legal_args = get_command_legal_args(command_name);
-    // printf("Validating commaind '%s' , with %d args\n", command_name, arg_size);
-    switch (legal_args) {
-        case MULTIPLE_NUMBER_ARGS:
-            if (arg_size < 3) {
-                printf("Missing parameter\n");
-                return -1;
-            }
-            if (arg_size > 3) {
-                printf("Extraneous text after end of command\n");
-                return -1;
-            }
-
-            if ((is_valid_num(args[1]) == -1) || (is_valid_num(args[2]) == -1)) {
-                printf("Invalid parameter - not a number\n");
-                return -1;
-            }
-
-            return 0;
-    }
-    return 0;
 }
 
 // void exec_command(char *command_name, char **args, int arg_size, Variables *vars) {
@@ -364,7 +346,6 @@ void parse_command_args(char *command_name, char *raw_command) {
             }
 
             delim_ptr = strchr(raw_command, ',');
-            printf("delim_ptr = '%s'\n", delim_ptr);
             if (delim_ptr != NULL) {
                 printf("Extraneous text after end of command\n");
                 return;
@@ -375,8 +356,48 @@ void parse_command_args(char *command_name, char *raw_command) {
                 printf("Invalid parameter - not a number\n");
                 return;
             }
-            printf("EMPTY ARGS COMMAND WORKED!\n");
+            printf("SINGLE_NUMBER_ARGS COMMAND WORKED! first_num = %s\n", first_num);
             break;
+        
+        case SINGLE_COMP_ARGS:
+            printf("IN SINGLE_COMP_ARGS\n");
+            while (isspace(*raw_command)) {
+                raw_command++;
+            }
+
+            if (*raw_command != ',') {
+                printf("Missing comma\n");
+                return;
+            }
+            raw_command++; // Skip comma we just detected
+            while (isspace(*raw_command)) {
+                raw_command++;
+            }
+
+            delim_ptr = strchr(raw_command, ',');
+            if (delim_ptr != NULL) {
+                printf("Extraneous text after end of command\n");
+                return;
+            }
+
+            printf("Raw command just before getting second comp var - '%s'\n", raw_command);
+
+            char second_var_name = raw_command[0];
+            printf("Allegedly detected varname = '%c'\n", second_var_name);
+            raw_command++;
+            printf("Raw command after getting second comp var - '%s'\n", raw_command);
+            if (is_valid_var(second_var_name) == -1) {
+                printf("Undefined complex variable as second parameter\n");
+                return;
+            }
+
+            if (strlen(raw_command) > 0) {
+                printf("Extraneous text after command\n");
+                return;
+            }
+            printf("SINGLE_COMP_ARGS COMMAND WORKED! second_varname = '%c'\n", second_var_name);
+            break;
+        
         case MULTIPLE_NUMBER_ARGS:
             printf("IN MULTIPLE_NUMBER_ARGS\n");
             delim_ptr = strchr(raw_command, ',');
@@ -406,48 +427,14 @@ void parse_command_args(char *command_name, char *raw_command) {
             }
             return;
     }
-
-    // printf("Our varname is - '%s', and what's left of raw_command - '%s'\n", var_name, raw_command);
-    // raw_command++;
-
-    // Find first ',' after varname
-    // while (isspace(*raw_command)) {
-    //     raw_command++;
-    // }
-
-    // if (*raw_command != ',') {
-    //     printf("Missing comma\n");
-    //     return;
-    // }
-
-    // raw_command++;
-
-    // printf("Command now after finding the first ',' - %s\n", raw_command);
-
-    // while (detected_char == 0) {
-    //     if (*raw_command == ',') {
-    //         detected_char == 1;
-    //     } else if () {
-    //         var_name = *raw_command;
-    //         detected_char = 1;
-    //     }
-    //     raw_command++;
-    // }
-
-    // printf("After first var detection - raw_command = '%s', var_name = %s\n", raw_command, var_name);
-
-    // while (isspace(*raw_command) || *raw_command != ',') {
-    //     var_name = *
-    // }
 }
-
 
 int main() {
     // char raw_command[1000] = "  read_comp A, B,   2      s   ";
     // char raw_command[1000] = "print_comp";
     char raw_command[80], raw_command_bkup[80];
-    // char raw_command_bkup[80], raw_command[80] = "mult_comp_img A, 3";
-    char command_name[14] = "";
+    // char raw_command_bkup[80], raw_command[80] = "mult_comp_real A, 2";
+    char command_name[MAX_COMMAND_LEN] = "";
     char *command_args[10];
     int arg_size;
     
@@ -475,10 +462,10 @@ int main() {
         // printf("raw_command after prep_for_parsing = '%s'\n", raw_command);
 
         get_command_name(raw_command, command_name);
-
+        // printf("Command name detected = '%s'\n", command_name);
         // Remove any leftover whitespaces between command name & args
         // trim_leading_whitespace(raw_command);
-        // printf("Command name = '%s', command_size = %ld, remaining command = '%s'\n", command_name, strlen(command_name),raw_command);
+        printf("Command name = '%s', command_size = %ld, remaining command = '%s'\n", command_name, strlen(command_name),raw_command);
         
         // if (raw_command[strlen(raw_command)-1] == ',') {
         //     printf("Extraneous text after end of command\n");
