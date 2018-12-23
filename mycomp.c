@@ -22,15 +22,6 @@ int is_valid_num(char *num_as_str);
 int get_command_legal_args(char *command_name);
 void parse_command_args(char *command_name, char *raw_command, Variables *vars);
 
-// struct {
-//     char *command_name;
-//     void (*command_func)(void);
-//     int command_legal_args;
-// } COMMANDS[] = {
-//     {"read_comp", read_comp, MULTIPLE_NUMBER_ARGS},
-//     {"print_comp", print_comp, EMPTY_ARGS},
-// };
-
 struct {
     char *command_name;
     int command_legal_args;
@@ -51,8 +42,10 @@ char *VAR_NAMES[] = {
 };
 
 /* 
-    Validate a command name by checking if it has a trailing comma, or if it's
-    in the list of known commands.
+    Validate a command name by checking if it has a trailing comma, or if it's in the list of known commands.
+
+    @param command_name (*char) representing the command we're evaluating
+    @return (int) representing if command is valid or not (1 = valid, -1 = invalid)
 */
 int is_valid_command_name(char *command_name) {
     int i;
@@ -60,7 +53,7 @@ int is_valid_command_name(char *command_name) {
 
     if (command_name[strlen(command_name)-1] == ',') {
         printf("Illegal comma\n");
-        return 0;
+        return -1;
     }
 
     for (i=0; i<AVAILABLE_COMMANDS_COUNT; i++) {
@@ -72,12 +65,18 @@ int is_valid_command_name(char *command_name) {
 
     if (is_known_command == 0) {
         printf("Undefined command name\n");
-        return 0;
+        return -1;
     }
     
     return 1;
 }
 
+/*
+    Validate the variable name - check if it's in our variables list (A,B,C,D,E,F)
+
+    @param var_name (char) - The variable name we're evaluating
+    @return (int) - A flag that represents if var is variable or not (1 = valid, -1 = invalid)
+*/
 int is_valid_var(char var_name) {
     int i;
 
@@ -89,6 +88,11 @@ int is_valid_var(char var_name) {
     return -1;
 }
 
+/*
+    Trim all leading whitespaces in the received source string. This function modifies the original string!
+
+    @param source (*char) - The string to be trimmed
+*/
 void trim_leading_whitespace(char *source) {
     char *start = source;
     
@@ -104,6 +108,12 @@ void trim_leading_whitespace(char *source) {
     *source = '\0'; /* Terminate the string */
 }
 
+/*
+    Extract the command name from the raw command received from the user.
+
+    @param raw_command (*char) - The raw command we got from the user. This value will lose the command name once we're done!
+    @param command_name (*char) - The string that'll receive the command name we just extracted
+*/
 void get_command_name(char *raw_command, char *command_name) {
     char *raw_command_star = raw_command;
 
@@ -113,10 +123,9 @@ void get_command_name(char *raw_command, char *command_name) {
         command_name++;
         raw_command_star++;
     }
-    *command_name = '\0'; /* TODO - Do I need this? */
+    *command_name = '\0';
     
     /* Remove the command name from raw_command */
-    
     while (*raw_command_star != 0) {
         *raw_command = *raw_command_star;
         raw_command++;
@@ -127,12 +136,21 @@ void get_command_name(char *raw_command, char *command_name) {
 
 /*
     Prepare the raw command for parsing - remove leading whitespace & trailing '\n'
+
+    @param raw_command (*char) - The raw command we got from the user.
 */
 void prep_raw_command_for_parsing(char *raw_command) {
     strtok(raw_command, "\n");
     trim_leading_whitespace(raw_command);
 }
 
+/*
+    Check if a string represents a valid float number. We're wrapping `strtof` and not using `atof` since
+    there are certain permutations that aren't detected and parsed properly, so we want to be sure it's actually a float.
+
+    @param num_as_str (*char) - A string representing the string we're evaluating.
+    @return (int) - A flag representing if our string represents an actual float (1 = true, -1 = false)
+*/
 int is_valid_num(char *num_as_str) {
     char *err_ptr;
     strtof(num_as_str, &err_ptr);
@@ -142,6 +160,12 @@ int is_valid_num(char *num_as_str) {
     return 1;
 }
 
+/*
+    Get the type of legal args for the given command name.
+
+    @param command_name (*char) - The command name we're getting the legal args for
+    @return (int) - An int representing the type of legal args for the command
+*/
 int get_command_legal_args(char *command_name) {
      int i;
      for (i=0; i<AVAILABLE_COMMANDS_COUNT; i++) {
@@ -152,6 +176,15 @@ int get_command_legal_args(char *command_name) {
     return -1;
 }
 
+/*
+    Execute a command with multiple number args
+
+    @param vars (*Variables) - A pointer to the variables object, containing all the complex variables in our app
+    @param command_name (*char) - The command we're going to execute
+    @param var_name (char) - The complex variable name to execute the command with
+    @param f1 (float) - The first number in our command
+    @param f2 (float) - The second number in our command
+*/
 void exec_multi_number_args_command(Variables *vars, char *command_name, char var_name, float f1, float f2) {
     Complex *c;
     c = access_variable(vars, var_name);
@@ -160,6 +193,13 @@ void exec_multi_number_args_command(Variables *vars, char *command_name, char va
     }
 }
 
+/*
+    Execute a command without any args
+
+    @param vars (*Variables) - A pointer to the variables object, containing all the complex variables in our app
+    @param command_name (*char) - The command we're going to execute
+    @param var_name (char) - The complex variable name to execute the command with
+*/
 void exec_empty_args_command(Variables *vars, char *command_name, char var_name) {
     Complex *c;
     c = access_variable(vars, var_name);
@@ -170,6 +210,14 @@ void exec_empty_args_command(Variables *vars, char *command_name, char var_name)
     }
 }
 
+/*
+    Execute a command with a single Complex variable arg
+
+    @param vars (*Variables) - A pointer to the variables object, containing all the complex variables in our app
+    @param command_name (*char) - The command we're going to execute
+    @param var_name (char) - The complex variable name to execute the command with
+    @param var_name_2 (char) - The second complex variable name to use in our command
+*/
 void exec_single_comp_args_command(Variables *vars, char *command_name, char var_name, char var_name_2) {
     Complex *c1, *c2;
     c1 = access_variable(vars, var_name);
@@ -184,6 +232,14 @@ void exec_single_comp_args_command(Variables *vars, char *command_name, char var
     }
 }
 
+/*
+    Execute a command with a single number arg
+
+    @param vars (*Variables) - A pointer to the variables object, containing all the complex variables in our app
+    @param command_name (*char) - The command we're going to execute
+    @param var_name (char) - The complex variable name to execute the command with
+    @param f1 (char) - The number value to use in our command
+*/
 void exec_single_number_args_command(Variables *vars, char *command_name, char var_name, float f1) {
     Complex *c;
     c = access_variable(vars, var_name);
@@ -196,8 +252,13 @@ void exec_single_number_args_command(Variables *vars, char *command_name, char v
 
 /*
     Parse the command args, with the following rules - 
-        1. All commands except "stop" must begin with a legal var name
+        1. All commands except "stop" must begin with a legal var name (which won't reach this function anyway)
         2. Depending on the command, we evaluate the type of the next args (num, varname etc)
+        3. After validating that the command is valid & extracting the command args, we execute it
+    
+    @param command_name (*char) - The command we're going to execute
+    @param raw_command (*char) - The raw command (w/o the command name, which is only the command arguments)
+    @param vars (*Variables) - A pointer to the variables object, containing all the complex variables in our app
 */
 void parse_command_args(char *command_name, char *raw_command, Variables *vars) {
     char var_name, second_var_name;
@@ -391,7 +452,7 @@ int main() {
         
         trim_leading_whitespace(raw_command);
 
-        if (!is_valid_command_name(command_name)) {
+        if (is_valid_command_name(command_name) == -1) {
             continue;
         }
 
