@@ -145,17 +145,40 @@ void prep_raw_command_for_parsing(char *raw_command) {
 }
 
 /*
-    Check if a string represents a valid float number. We're wrapping `strtof` and not using `atof` since
-    there are certain permutations that aren't detected and parsed properly, so we want to be sure it's actually a float.
+    Check if a string represents a valid float number. We're this on our own and not using `atof` since
+    there are certain permutations that aren't detected and parsed properly, so we want to be sure it's 
+    actually a float with the current `atof` (also, no `strtof` allowed...)
 
     @param num_as_str (*char) - A string representing the string we're evaluating.
     @return (int) - A flag representing if our string represents an actual float (1 = true, -1 = false)
 */
-int is_valid_num(char *num_as_str) {
+/*int is_valid_num(char *num_as_str) {
     char *err_ptr;
     strtof(num_as_str, &err_ptr);
     if (*err_ptr != '\0') {
         return -1;
+    }
+    return 1;
+}*/
+
+int is_valid_num(char *num_as_str) {
+    int dot_flag_count = 0;
+    if (*num_as_str == '-') {
+        num_as_str++;
+    }
+
+    while (num_as_str != 0 && strlen(num_as_str) > 0) {
+        if (*num_as_str == '.') { /* Allow only one dot in our number */
+            if (dot_flag_count > 0) {
+                return -1;
+            } else {
+                dot_flag_count++;
+            }
+        } else if (!isdigit(*num_as_str)) {
+            return -1;
+        }
+
+        num_as_str++;
     }
     return 1;
 }
@@ -429,7 +452,7 @@ void parse_command_args(char *command_name, char *raw_command, Variables *vars) 
 
 int main() {
     char raw_command[MAX_RAW_COMMAND_LEN];
-    char command_name[MAX_COMMAND_NAME_LEN] = "";
+    char command_name[MAX_RAW_COMMAND_LEN] = "";
     
     char *p_command;
 
