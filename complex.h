@@ -1,11 +1,17 @@
 #ifndef COMPLEX_H
 #define COMPLEX_H
 
+/*
+A type representing a complex variable
+*/
 typedef struct Complex {
     float realVal;
     float imaginaryVal;
 } Complex;
 
+/*
+A type representing the complex variables in our program - 6 Complex variables
+*/
 typedef struct Variables {
     Complex A;
     Complex B;

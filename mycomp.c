@@ -20,8 +20,11 @@ void get_command_name(char *raw_command, char *command_name);
 void prep_raw_command_for_parsing(char *raw_command);
 int is_valid_num(char *num_as_str);
 int get_command_legal_args(char *command_name);
-void parse_command_args(char *command_name, char *raw_command, Variables *vars);
+void execute_command(char *command_name, char *raw_command, Variables *vars);
 
+/*
+Our data structure for storing the command names & their corresponding accepted arguments
+*/
 struct {
     char *command_name;
     int command_legal_args;
@@ -274,7 +277,7 @@ void exec_single_number_args_command(Variables *vars, char *command_name, char v
 }
 
 /*
-    Parse the command args, with the following rules - 
+    Parse & execute the command we received, with the following rules - 
         1. All commands except "stop" must begin with a legal var name (which won't reach this function anyway)
         2. Depending on the command, we evaluate the type of the next args (num, varname etc)
         3. After validating that the command is valid & extracting the command args, we execute it
@@ -283,7 +286,7 @@ void exec_single_number_args_command(Variables *vars, char *command_name, char v
     @param raw_command (*char) - The raw command (w/o the command name, which is only the command arguments)
     @param vars (*Variables) - A pointer to the variables object, containing all the complex variables in our app
 */
-void parse_command_args(char *command_name, char *raw_command, Variables *vars) {
+void execute_command(char *command_name, char *raw_command, Variables *vars) {
     char var_name, second_var_name;
     int i = 0, j = 0, legal_args;
     char first_num_str[MAX_RAW_COMMAND_LEN], second_num_str[MAX_RAW_COMMAND_LEN];
@@ -320,7 +323,10 @@ void parse_command_args(char *command_name, char *raw_command, Variables *vars) 
             break;
 
         case SINGLE_NUMBER_ARGS:
-            if (*raw_command != ',') {
+            if (strlen(raw_command) == 0) {
+                printf("Missing parameter\n");
+                return;
+            } else if (*raw_command != ',') {
                 printf("Missing comma\n");
                 return;
             }
@@ -356,7 +362,10 @@ void parse_command_args(char *command_name, char *raw_command, Variables *vars) 
             break;
         
         case SINGLE_COMP_ARGS:
-            if (*raw_command != ',') {
+            if (strlen(raw_command) == 0) {
+                printf("Missing parameter\n");
+                return;
+            } else if (*raw_command != ',') {
                 printf("Missing comma\n");
                 return;
             }
@@ -398,7 +407,7 @@ void parse_command_args(char *command_name, char *raw_command, Variables *vars) 
                 return;
             }
             
-            while (!isspace(*raw_command) && *raw_command != ',') {
+            while (!isspace(*raw_command) && *raw_command != ',' && strlen(raw_command) > 0) {
                 first_num_str[i++] = *raw_command;
                 raw_command++;
             }
@@ -412,8 +421,11 @@ void parse_command_args(char *command_name, char *raw_command, Variables *vars) 
             first_num = atof(first_num_str);
 
             trim_leading_whitespace(raw_command);
-
-            if (*raw_command != ',') {
+            
+            if (strlen(raw_command) == 0) {
+                printf("Missing parameter\n");
+                return;
+            } else if (*raw_command != ',') {
                 printf("Missing comma\n");
                 return;
             }
@@ -494,7 +506,7 @@ int main() {
             continue;
         }
 
-        parse_command_args(command_name, raw_command, &vars);
+        execute_command(command_name, raw_command, &vars);
         continue;
 
     }
