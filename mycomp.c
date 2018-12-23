@@ -471,6 +471,10 @@ int main() {
         prep_raw_command_for_parsing(raw_command);
         printf("%s\n", raw_command);
 
+        if (strlen(raw_command) == 0) {
+            continue;
+        }
+
         get_command_name(raw_command, command_name);
         
         trim_leading_whitespace(raw_command);

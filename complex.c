@@ -119,5 +119,5 @@ void mult_comp_comp(Complex *c1, Complex *c2) {
 
 void abs_comp(Complex *c1) {
     float absVal = sqrt(pow(c1->realVal, 2) + pow(c1->imaginaryVal, 2));
-    printf("|%0.2f|\n", absVal);
+    printf("%0.2f\n", absVal);
 }
