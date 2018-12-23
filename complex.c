@@ -82,16 +82,16 @@ void sub_comp(Complex *c1, Complex *c2) {
 
     float realVal = c1->realVal - c2->realVal;
     float imaginaryVal = c1->imaginaryVal - c2->imaginaryVal;
-    
+
     read_comp(&result, realVal, imaginaryVal);
     print_comp(&result);
 }
 
-void mult_comp_real(Complex *c1, float r1) {
+void mult_comp_real(Complex *c1, float realMultiplier) {
     Complex result;
 
-    float realVal = r1 * c1->realVal;
-    float imaginaryVal = r1 * c1->imaginaryVal;
+    float realVal = realMultiplier * c1->realVal;
+    float imaginaryVal = realMultiplier * c1->imaginaryVal;
 
     read_comp(&result, realVal, imaginaryVal);
     print_comp(&result);
@@ -119,5 +119,5 @@ void mult_comp_comp(Complex *c1, Complex *c2) {
 
 void abs_comp(Complex *c1) {
     float absVal = sqrt(pow(c1->realVal, 2) + pow(c1->imaginaryVal, 2));
-    printf("%0.2f", absVal);
+    printf("|%0.2f|", absVal);
 }
