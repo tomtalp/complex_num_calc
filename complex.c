@@ -36,19 +36,20 @@ Variables init_variables() {
 }
 
 
-Complex *access_variable(Variables * v, char *varName) {
-    if (strcmp(varName, "A") == 0) {
-        return &v->A;
-    } else if (strcmp(varName, "B") == 0) {
-        return &v->B;
-    } else if (strcmp(varName, "C") == 0) {
-        return &v->C;
-    } else if (strcmp(varName, "D") == 0) {
-        return &v->D;
-    } else if (strcmp(varName, "E") == 0) {
-        return &v->E;
-    } else if (strcmp(varName, "F") == 0) {
-        return &v->F;
+Complex *access_variable(Variables * v, char varName) {
+    switch (varName) {
+        case 'A':
+            return &v->A;
+        case 'B':
+            return &v->B;
+        case 'C':
+            return &v->C;
+        case 'D':
+            return &v->D;
+        case 'E':
+            return &v->E;
+        case 'F':
+            return &v->F;
     }
     return NULL;
 }
@@ -78,8 +79,10 @@ void add_comp(Complex *c1, Complex *c2) {
 
 void sub_comp(Complex *c1, Complex *c2) {
     Complex result;
+
     float realVal = c1->realVal - c2->realVal;
     float imaginaryVal = c1->imaginaryVal - c2->imaginaryVal;
+    
     read_comp(&result, realVal, imaginaryVal);
     print_comp(&result);
 }
@@ -115,7 +118,6 @@ void mult_comp_comp(Complex *c1, Complex *c2) {
 }
 
 void abs_comp(Complex *c1) {
-    // float absVal = sqrt(pow(c1->realVal, 2) + pow(c1->imaginaryVal, 2));
-    // printf("%0.2f", absVal);
-    printf("TODO\n");
+    float absVal = sqrt(pow(c1->realVal, 2) + pow(c1->imaginaryVal, 2));
+    printf("%0.2f", absVal);
 }

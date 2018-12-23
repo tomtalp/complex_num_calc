@@ -17,9 +17,11 @@ typedef struct Variables {
 
 void init_complex(Complex * c);
 Variables init_variables();
+Complex *access_variable(Variables * v, char varName);
 void read_comp(Complex *c1, float realVal, float imaginaryVal);
 void print_comp(Complex *comp);
 void add_comp(Complex *c1, Complex *c2);
+void sub_comp(Complex *c1, Complex *c2);
 void mult_comp_real(Complex *c1, float r1);
 void mult_comp_img(Complex *c1, float imaginaryMultiplier);
 void mult_comp_comp(Complex *c1, Complex *c2);
